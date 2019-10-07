@@ -143,11 +143,12 @@ module Hubspot
       end
     end
 
-    attr_reader :properties, :vid, :is_new
+    attr_reader :properties, :identity_profiles, :vid, :is_new
     attr_reader :is_contact
 
     def initialize(response_hash)
       props = response_hash['properties']
+      @identity_profiles = response_hash['identity-profiles']
       @properties = Hubspot::Utils.properties_to_hash(props) unless props.blank?
       @is_contact = response_hash["is-contact"]
       @vid = response_hash['vid']
@@ -167,6 +168,13 @@ module Hubspot
 
     def is_new=(val)
       @is_new = val
+    end
+
+    def emails
+      @identity_profiles
+        .flat_map { |profile| profile.fetch('identities', {}) }
+        .select { |identity| identity['type'] == 'EMAIL' }
+        .map { |identity| identity['value'] }
     end
 
     # Updates the properties of a contact
