@@ -254,11 +254,13 @@ describe Hubspot::Contact do
         expect(first.vid).to eql 154835
         expect(first['firstname']).to eql 'HubSpot'
         expect(first['lastname']).to eql 'Test'
+        expect(first.emails).to eq %w[test@hubspot.com]
 
         expect(last).to be_a Hubspot::Contact
         expect(last.vid).to eql 196199
         expect(last['firstname']).to eql 'Eleanor'
         expect(last['lastname']).to eql 'Morgan'
+        expect(last.emails).to eq %w[emorgan@mdecorps.com]
       end
 
       it 'must get the contacts list with paging data' do
