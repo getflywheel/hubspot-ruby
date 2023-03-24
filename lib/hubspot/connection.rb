@@ -7,7 +7,7 @@ module Hubspot
     class << self
       def get_json(path, opts)
         url = generate_url(path, opts)
-        response = get(url, format: :json)
+        response = get(url, format: :json, headers: generate_headers)
         log_request_and_response url, response
         raise(Hubspot::RequestError.new(response)) unless response.success?
         response.parsed_response
@@ -17,7 +17,7 @@ module Hubspot
         no_parse = opts[:params].delete(:no_parse) { false }
 
         url = generate_url(path, opts[:params])
-        response = post(url, body: opts[:body].to_json, headers: { 'Content-Type' => 'application/json' }, format: :json)
+        response = post(url, body: opts[:body].to_json, headers: generate_headers({ 'Content-Type' => 'application/json' }), format: :json)
         log_request_and_response url, response, opts[:body]
         raise(Hubspot::RequestError.new(response)) unless response.success?
 
@@ -26,7 +26,7 @@ module Hubspot
 
       def put_json(path, opts)
         url = generate_url(path, opts[:params])
-        response = put(url, body: opts[:body].to_json, headers: { 'Content-Type' => 'application/json' }, format: :json)
+        response = put(url, body: opts[:body].to_json, headers: generate_headers({ 'Content-Type' => 'application/json' }), format: :json)
         log_request_and_response url, response, opts[:body]
         raise(Hubspot::RequestError.new(response)) unless response.success?
         response.parsed_response
@@ -34,7 +34,7 @@ module Hubspot
 
       def delete_json(path, opts)
         url = generate_url(path, opts)
-        response = delete(url, format: :json)
+        response = delete(url, format: :json, headers: generate_headers)
         log_request_and_response url, response, opts[:body]
         raise(Hubspot::RequestError.new(response)) unless response.success?
         response
@@ -43,7 +43,7 @@ module Hubspot
       def track(path, opts)
         Hubspot::Config.ensure!(:portal_id)
         url = generate_url(path, opts.merge(_a: Hubspot::Config.portal_id), base_url: TRACK_URL, hapikey: false)
-        response = get(url)
+        response = get(url, headers: generate_headers)
         raise(Hubspot::RequestError.new(response)) unless response.success?
         response
       end
@@ -55,11 +55,11 @@ module Hubspot
       end
 
       def generate_url(path, params={}, options={})
-        Hubspot::Config.ensure! :hapikey
+        Hubspot::Config.ensure! :hapikey unless Hubspot::Config.bearer_token.present?
         path = path.clone
         params = params.clone
         base_url = options[:base_url] || Hubspot::Config.base_url
-        params["hapikey"] = Hubspot::Config.hapikey unless options[:hapikey] == false
+        params["hapikey"] = Hubspot::Config.hapikey unless options[:hapikey] == false || Hubspot::Config.bearer_token.present?
 
         if path =~ /:portal_id/
           Hubspot::Config.ensure! :portal_id
@@ -80,6 +80,11 @@ module Hubspot
 
         path += path.include?('?') ? '&' : "?" if query.present?
         base_url + path + query
+      end
+
+      def generate_headers(opts = {})
+        opts.merge!({ "Authorization" => "Bearer #{Hubspot::Config.bearer_token}" }) if Hubspot::Config.bearer_token.present?
+        opts.merge!({ "User-Agent" => "fw-hubspot-ruby" })
       end
 
       # convert into milliseconds since epoch
