@@ -1,0 +1,28 @@
+name: Smoke Test
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+          bundler-cache: true
+
+      - name: Verify the gem loads correctly
+        run: |
+          bundle exec ruby -e '
+            require "hubspot-ruby"
+            Hubspot.configure(hapikey: "demo")
+            raise "unexpected base_url" unless Hubspot::Config.base_url == "https://api.hubapi.com"
+            puts "Loaded OK, base_url=#{Hubspot::Config.base_url}"
+          '
