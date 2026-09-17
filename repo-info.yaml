@@ -1,0 +1,13 @@
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: hubspot-ruby
+spec:
+  type: repository
+  engineeringExcellence:
+    exemptedChecks:
+      dependabotConfigPresent:
+        reason: |-
+          This is a fork we plan to sunset in 2027. Investing in ongoing
+          dependency maintenance isn't a good use of time given the planned
+          retirement. Will revisit if the sunset timeline changes.
